@@ -114,6 +114,13 @@ entity fpga64_sid_iec is
 		iec_clk_i	: in  std_logic;
 		iec_atn_o	: out std_logic;
 		
+		-- USER_IO TO IEC
+		iec_data_o_userio	: out std_logic;
+		iec_data_i_userio	: in  std_logic;
+		iec_clk_o_userio	: out std_logic;
+		iec_clk_i_userio	: in  std_logic;
+		iec_atn_o_userio	: out std_logic;
+		
 		c64rom_addr : in  std_logic_vector(13 downto 0);
 		c64rom_data : in  std_logic_vector(7 downto 0);
 		c64rom_wr   : in  std_logic;
@@ -776,8 +783,12 @@ begin
 	end process;
 	
 	iec_data_o <= not cia2_pao(5);
+	iec_data_o_userio <= not cia2_pao(5);	-- USER IO IEC CONNECTION
 	iec_clk_o <= not cia2_pao(4);
+	iec_clk_o_userio <= not cia2_pao(4);	-- USER IO IEC CONNECTION
 	iec_atn_o <= not cia2_pao(3);
+	iec_atn_o_userio <= not cia2_pao(3);	-- USER IO IEC CONNECTION
+	
 	ramDataOut <= "00" & cia2_pao(5 downto 3) & "000" when sysCycle >= CYCLE_IEC0 and sysCycle <= CYCLE_IEC3 else cpuDo;
 	ramAddr <= systemAddr when (phi0_cpu = '1') or (phi0_vic = '1') else (others => '0');
 	ramWe <= '0' when sysCycle = CYCLE_IEC2 or sysCycle = CYCLE_IEC3 else not systemWe;
@@ -827,13 +838,22 @@ begin
 				ces <= "0001";
 			end if;
 		end if;
+		
 		if rising_edge(clk32) then
 			if sysCycle = CYCLE_IEC1 then
-				cia2_pai(7) <= iec_data_i and not cia2_pao(5);
-				cia2_pai(6) <= iec_clk_i and not cia2_pao(4);
+				if (iec_data_i = '0') then 
+					cia2_pai(7) <= (iec_data_i) and not cia2_pao(5);
+					else cia2_pai(7) <= (iec_data_i_userio) and not cia2_pao(5);	-- USER_IO IEC CONNECTION.
+				end if;
+				if (iec_clk_i = '0') then
+					cia2_pai(6) <= (iec_clk_i) and not cia2_pao(4);	
+					else cia2_pai(6) <= (iec_clk_i_userio) and not cia2_pao(4);		-- USER_IO IEC CONNECTION
+				end if;				
 			end if;
 		end if;
 	end process;
+	
+	cia2_pai(5 downto 0) <= cia2_pao(5 downto 0);
 
 	process(clk32)
 	begin
@@ -843,8 +863,6 @@ begin
 			end if;
 		end if;
 	end process;
-
-	cia2_pai(5 downto 0) <= cia2_pao(5 downto 0);
 
 	process(joyC, joyD, cia2_pbo, uart_rxd, uart_ri_in, uart_dcd_in, uart_cts, uart_dsr, uart_enable)
 	begin

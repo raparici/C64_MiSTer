@@ -128,7 +128,7 @@ module emu
 );
 
 assign ADC_BUS  = 'Z;
-assign USER_OUT = '1;
+//assign USER_OUT = '1;
 assign UART_RTS = UART_CTS;
 assign UART_DTR = UART_DSR;
 
@@ -729,11 +729,16 @@ fpga64_sid_iec fpga64
 	.audio_data(audio_l),
 	.extfilter_en(~status[6]),
 	.sid_ver(status[13]),
-	.iec_data_o(c64_iec_data),
+	.iec_data_o(c64_iec_data), 			
+	.iec_data_o_userio(USER_OUT[6]),	// IEC USERIO PORT
 	.iec_atn_o(c64_iec_atn),
+	.iec_atn_o_userio(USER_OUT[0]),	// IEC USERIO PORT
 	.iec_clk_o(c64_iec_clk),
-	.iec_data_i(c64_iec_data_i),
+	.iec_clk_o_userio(USER_OUT[3]),	// IEC USERIO PORT
+	.iec_data_i(c64_iec_data_i), 
+	.iec_data_i_userio(USER_IN[6]),	// IEC USERIO PORT
 	.iec_clk_i(c64_iec_clk_i),
+	.iec_clk_i_userio(USER_IN[3]),	// IEC USERIO PORT
 	.c64rom_addr(ioctl_addr[13:0]),
 	.c64rom_data(ioctl_data),
 	.c64rom_wr((ioctl_index == 0) && !ioctl_addr[14] && ioctl_download && ioctl_wr),
@@ -786,14 +791,14 @@ reg c64_iec_data_i, c64_iec_clk_i;
 always @(posedge clk_sys) begin
 	reg iec_data_d1, iec_clk_d1;
 	reg iec_data_d2, iec_clk_d2;
-
+	
 	iec_data_d1 <= c1541_1_iec_data & (~drive9 | c1541_2_iec_data);
 	iec_data_d2 <= iec_data_d1;
 	if(iec_data_d1 == iec_data_d2) c64_iec_data_i <= iec_data_d2;
-
+	
 	iec_clk_d1 <= c1541_1_iec_clk & (~drive9 | c1541_2_iec_clk);
 	iec_clk_d2 <= iec_clk_d1;
-	if(iec_clk_d1 == iec_clk_d2) c64_iec_clk_i <= iec_clk_d2;
+	if(iec_clk_d1 == iec_clk_d2) c64_iec_clk_i <= iec_clk_d2;	
 end
 
 wire c64_iec_clk;
